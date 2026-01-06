@@ -6,6 +6,9 @@ export type VideoAsset = {
   type: 'video';
   name: string;
   duration?: number;
+  width?: number;
+  height?: number;
+  codec?: string;
   operationId?: string;
   thumbnail?: string;
 };
@@ -27,9 +30,25 @@ export type Scene = {
   description: string;
 };
 
+export type StoryboardItem = {
+  sceneNumber: number;
+  title: string;
+  description: string;
+  shotComposition: string;
+  visualCues: string;
+  estimatedDuration: string;
+};
+
 export type BackgroundSettings = {
   isRemoved: boolean;
   color: string; // e.g., 'green', 'blue', 'white', 'black', 'transparent'
+};
+
+export type TextOverlay = {
+  text: string;
+  color: string;
+  fontSize: number;
+  position: 'top' | 'center' | 'bottom';
 };
 
 export type TimelineClip = {
@@ -43,6 +62,7 @@ export type TimelineClip = {
   scenes?: Scene[];
   background?: BackgroundSettings;
   playbackSpeed?: number;
+  textOverlay?: TextOverlay;
 };
 
 export interface AppState {
@@ -52,4 +72,6 @@ export interface AppState {
   activeClipId: string | null;
   isAnalyzing: boolean;
   isProcessingBg: boolean;
+  isAnalyzingStoryboard: boolean;
+  storyboard: StoryboardItem[] | null;
 }

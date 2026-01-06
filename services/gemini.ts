@@ -1,5 +1,6 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
+import { TimelineClip, MediaAsset, StoryboardItem } from "../types";
 
 export class GeminiService {
   private static async getClient() {
@@ -30,9 +31,6 @@ export class GeminiService {
     return await ai.models.generateVideos(payload);
   }
 
-  /**
-   * Stitches two segments using a starting frame from clip A and an ending frame from clip B.
-   */
   static async stitchVideos(prompt: string, startImageBase64: string, endImageBase64: string, aspectRatio: '16:9' | '9:16' = '16:9') {
     const ai = await this.getClient();
     const payload: any = {
@@ -70,10 +68,6 @@ export class GeminiService {
     });
   }
 
-  /**
-   * AI-powered Background Removal/Replacement for video.
-   * Uses video-to-video generation to mask the subject and replace the background.
-   */
   static async replaceBackground(videoUri: string, color: string, aspectRatio: '16:9' | '9:16' = '16:9') {
     const ai = await this.getClient();
     const colorPrompt = color === 'transparent' 
@@ -92,9 +86,6 @@ export class GeminiService {
     });
   }
 
-  /**
-   * Uses Gemini Pro Vision to analyze a video and identify scene breaks/cuts.
-   */
   static async analyzeScenes(videoBase64: string, mimeType: string) {
     const ai = await this.getClient();
     const response = await ai.models.generateContent({
@@ -116,6 +107,63 @@ export class GeminiService {
       return JSON.parse(response.text || "[]");
     } catch (e) {
       console.error("Failed to parse scene analysis", e);
+      return [];
+    }
+  }
+
+  static async generateStoryboard(timeline: TimelineClip[], assets: MediaAsset[], userPrompt: string): Promise<StoryboardItem[]> {
+    const ai = await this.getClient();
+    
+    const timelineContext = timeline.map((clip, idx) => {
+      const asset = assets.find(a => a.id === clip.assetId);
+      return `Clip ${idx + 1}: ${asset ? asset.name : 'Unknown Asset'}. ${clip.prompt ? `Custom prompt: ${clip.prompt}` : ''}. Transition: ${clip.transition || 'none'}.`;
+    }).join('\n');
+
+    const prompt = `Act as a world-class film director and storyboard artist. 
+Analyze the current video timeline and the user's creative vision to generate a cinematic scene-by-scene storyboard/outline.
+
+User Creative Vision: "${userPrompt}"
+
+Current Timeline State:
+${timelineContext}
+
+Generate a detailed storyboard with the following schema for each scene:
+1. sceneNumber
+2. title
+3. description
+4. shotComposition (e.g., Wide shot, Close-up, Tracking shot)
+5. visualCues (cinematography details, lighting, mood)
+6. estimatedDuration
+
+Provide a coherent flow that bridges the existing clips into a professional reel.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              sceneNumber: { type: Type.INTEGER },
+              title: { type: Type.STRING },
+              description: { type: Type.STRING },
+              shotComposition: { type: Type.STRING },
+              visualCues: { type: Type.STRING },
+              estimatedDuration: { type: Type.STRING },
+            },
+            required: ["sceneNumber", "title", "description", "shotComposition", "visualCues", "estimatedDuration"]
+          }
+        }
+      }
+    });
+
+    try {
+      return JSON.parse(response.text || "[]");
+    } catch (e) {
+      console.error("Failed to parse storyboard", e);
       return [];
     }
   }
