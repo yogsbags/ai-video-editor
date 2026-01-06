@@ -1,0 +1,5 @@
+{
+  "name": "StitchAI - AI Video Stitcher & Editor",
+  "description": "A professional AI video editor that uses Gemini Veo models to generate, extend, and stitch videos seamlessly with smooth transitions and drag-and-drop asset management.",
+  "requestFramePermissions": []
+}
