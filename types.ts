@@ -1,8 +1,8 @@
 
 export type VideoAsset = {
   id: string;
-  url: string; // This is the blob URL for local preview
-  originalUri?: string; // This is the remote URI returned by Gemini API, required for extension
+  url: string;
+  originalUri?: string;
   type: 'video';
   name: string;
   duration?: number;
@@ -21,9 +21,18 @@ export type ImageAsset = {
   base64: string;
 };
 
-export type MediaAsset = VideoAsset | ImageAsset;
+export type AudioAsset = {
+  id: string;
+  url: string;
+  type: 'audio';
+  name: string;
+  duration?: number;
+};
 
-export type TransitionType = 'none' | 'crossfade' | 'fade-to-black' | 'motion-blur' | 'morph' | 'glitch';
+export type MediaAsset = VideoAsset | ImageAsset | AudioAsset;
+
+export type TransitionType = 'none' | 'crossfade' | 'fade-to-black' | 'motion-blur' | 'morph' | 'glitch' | 'speed-ramp';
+export type SpeedRampType = 'none' | 'slow-fast' | 'fast-slow' | 'slow-fast-slow' | 'fast-slow-fast';
 
 export type Scene = {
   timestamp: string;
@@ -39,16 +48,30 @@ export type StoryboardItem = {
   estimatedDuration: string;
 };
 
-export type BackgroundSettings = {
-  isRemoved: boolean;
-  color: string; // e.g., 'green', 'blue', 'white', 'black', 'transparent'
+export type ColorGrading = {
+  exposure: number;
+  contrast: number;
+  saturation: number;
+  vibrance: number;
+  tint: number;
+  highlights: number;
+  shadows: number;
+  temperature: number;
 };
 
-export type TextOverlay = {
+export type AudioSettings = {
+  volume: number;
+  isMuted: boolean;
+  fadeDuration: number;
+  autoDucked: boolean;
+};
+
+export type GraphicTemplate = 'none' | 'minimal-modern' | 'bold-action' | 'cinematic-serif' | 'glitch-digital' | 'lower-third-glass';
+
+export type Caption = {
   text: string;
-  color: string;
-  fontSize: number;
-  position: 'top' | 'center' | 'bottom';
+  startTime: number;
+  endTime: number;
 };
 
 export type TimelineClip = {
@@ -56,22 +79,46 @@ export type TimelineClip = {
   assetId: string;
   prompt?: string;
   order: number;
+  startTime: number;
+  duration: number;
   status: 'pending' | 'generating' | 'ready' | 'error';
   extendedFromId?: string;
   transition?: TransitionType;
-  scenes?: Scene[];
-  background?: BackgroundSettings;
+  speedRamp?: SpeedRampType;
+  colorGrading?: ColorGrading;
+  audioSettings?: AudioSettings;
+  graphicTemplate?: GraphicTemplate;
   playbackSpeed?: number;
-  textOverlay?: TextOverlay;
+  scenes?: Scene[];
+  autoCaptions?: Caption[];
+  textOverlay?: {
+    text: string;
+    color: string;
+    fontSize: number;
+    position: 'top' | 'center' | 'bottom';
+  };
+};
+
+export type TrackType = 'video' | 'audio';
+
+export type Track = {
+  id: string;
+  type: TrackType;
+  name: string;
+  clips: TimelineClip[];
+  isLocked: boolean;
+  isVisible: boolean;
 };
 
 export interface AppState {
   assets: MediaAsset[];
-  timeline: TimelineClip[];
+  tracks: Track[];
   isGenerating: boolean;
   activeClipId: string | null;
+  activeTrackId: string | null;
   isAnalyzing: boolean;
   isProcessingBg: boolean;
   isAnalyzingStoryboard: boolean;
   storyboard: StoryboardItem[] | null;
+  isBoosting: boolean;
 }
